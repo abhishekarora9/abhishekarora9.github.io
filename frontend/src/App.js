@@ -1,44 +1,83 @@
 
 import React, { useState } from "react";
-import axios from "axios";
 
-export default function App() {
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+
+function App() {
   const [file, setFile] = useState(null);
-  const [bpmnXML, setBpmnXML] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [jobId, setJobId] = useState("");
+  const [status, setStatus] = useState("");
+  const [downloadUrl, setDownloadUrl] = useState("");
+  const [error, setError] = useState("");
 
-  const handleFileUpload = async () => {
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+    setStatus("");
+    setDownloadUrl("");
+    setError("");
+  };
+
+  const handleUpload = async () => {
     if (!file) return;
-    setLoading(true);
+    setStatus("Uploading...");
+    setError("");
     const formData = new FormData();
     formData.append("file", file);
-
     try {
-      const uploadRes = await axios.post("http://localhost:8000/upload", formData);
-      const processRes = await axios.post("http://localhost:8000/process", {
-        filename: uploadRes.data.filename
+      const res = await fetch(`${API_URL}/upload`, {
+        method: "POST",
+        body: formData,
       });
-      setBpmnXML(processRes.data.bpmn_xml);
+      const data = await res.json();
+      if (data.job_id) {
+        setJobId(data.job_id);
+        setStatus("Processing...");
+        pollStatus(data.job_id);
+      } else {
+        setError("Failed to start processing.");
+      }
     } catch (err) {
-      alert("Something went wrong");
-      console.error(err);
+      setError("Upload failed.");
     }
-    setLoading(false);
+  };
+
+  const pollStatus = async (jobId) => {
+    let interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_URL}/status/${jobId}`);
+        const data = await res.json();
+        setStatus(data.status);
+        if (data.status === "completed") {
+          setDownloadUrl(`${API_URL}/download/${jobId}`);
+          clearInterval(interval);
+        } else if (data.status === "failed") {
+          setError("Processing failed.");
+          clearInterval(interval);
+        }
+      } catch (err) {
+        setError("Error checking status.");
+        clearInterval(interval);
+      }
+    }, 2000);
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">SOP to BPMN Generator</h1>
-      <input type="file" accept=".pdf,.docx,.png,.jpg" onChange={(e) => setFile(e.target.files[0])} />
-      <button className="bg-blue-500 text-white px-4 py-2 mt-4" onClick={handleFileUpload} disabled={loading}>
-        {loading ? "Processing..." : "Upload & Generate BPMN"}
-      </button>
-      {bpmnXML && (
-        <div className="mt-6">
-          <h2 className="font-semibold">Generated BPMN XML:</h2>
-          <textarea className="w-full h-64 p-2 border mt-2" value={bpmnXML} readOnly></textarea>
-        </div>
+    <div style={{ maxWidth: 500, margin: "40px auto", padding: 24, borderRadius: 8, boxShadow: "0 2px 8px #eee", background: "#fff" }}>
+      <h2>BPMN Generator from SOP</h2>
+      <input type="file" accept=".pdf,.docx,.png,.jpg,.jpeg" onChange={handleFileChange} />
+      <button style={{ marginTop: 16 }} onClick={handleUpload} disabled={!file}>Upload & Process</button>
+      {status && <div style={{ marginTop: 16 }}>Status: {status}</div>}
+      {downloadUrl && (
+        <a href={downloadUrl} style={{ display: "block", marginTop: 16 }} download>
+          Download BPMN XML
+        </a>
       )}
+      {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
+      <div style={{ marginTop: 32, fontSize: 12, color: "#888" }}>
+        Supported: PDF, DOCX, Images. Powered by AI multi-agent pipeline.
+      </div>
     </div>
   );
 }
+
+export default App;
