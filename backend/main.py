@@ -8,6 +8,7 @@ import os
 import shutil
 import time
 import threading
+import boto3
 
 app = FastAPI()
 
@@ -34,7 +35,7 @@ import os
 openai.api_key = os.getenv("OPENAI_API_KEY")  # Store your key in an environment variable
 
 def call_llm(prompt):
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         model="gpt-4",  # or "gpt-3.5-turbo"
         messages=[
             {"role": "system", "content": "You are a BPMN process builder."},
@@ -43,8 +44,7 @@ def call_llm(prompt):
     )
     return response.choices[0].message.content
 
-import boto3
-import os
+
 
 s3 = boto3.client('s3')
 textract = boto3.client('textract', region_name=os.getenv('AWS_DEFAULT_REGION'))
@@ -59,6 +59,14 @@ def extract_text_from_s3(bucket, key):
     job_id = response['JobId']
     # Poll for result (see Textract docs for full example)
     return job_id
+
+def extract_text_from_pdf(file_path):
+    # TODO: Implement PDF text extraction logic
+    return "Extracted text from PDF"
+
+def extract_text_from_docx(file_path):
+    # TODO: Implement DOCX text extraction logic
+    return "Extracted text from DOCX"
 
 def process_file(job_id, file_path):
     # 1. Extract text (AWS Textract or python-docx)
@@ -88,7 +96,7 @@ def process_file(job_id, file_path):
     # 6. Save result
     result_path = os.path.join(RESULT_DIR, f"{job_id}.bpmn.xml")
     with open(result_path, "w") as f:
-        f.write(final_bpmn_xml)
+        f.write(final_bpmn_xml or "")
     JOBS[job_id]["status"] = "completed"
     JOBS[job_id]["result_path"] = result_path
 
