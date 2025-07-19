@@ -6,9 +6,9 @@ const config = {
     ENVIRONMENT: "development"
   },
   
-  // Production environment (cloud) - Using HTTP temporarily (HTTPS has connectivity issues)
+  // Production environment (cloud) - Using HTTPS custom domain for global access
   production: {
-    API_BASE_URL: "http://bpmn-backend.eba-nkwvxj2u.us-east-2.elasticbeanstalk.com",
+    API_BASE_URL: "https://api.abhishek-arora.com",
     ENVIRONMENT: "production"
   }
 };
