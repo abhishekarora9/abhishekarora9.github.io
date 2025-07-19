@@ -179,6 +179,11 @@ def initialize_auth_files():
 # Initialize auth files on startup
 initialize_auth_files()
 
+@app.get("/health")
+def health_check():
+    """Health check endpoint for AWS deployment"""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
 @app.post("/login")
 def login(ads_id: str = Body(...), password: str = Body(...)):
     """Authenticate user and return token"""
