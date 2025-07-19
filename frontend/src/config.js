@@ -6,9 +6,9 @@ const config = {
     ENVIRONMENT: "development"
   },
   
-  // Production environment (cloud) - Using HTTPS to avoid mixed content errors
+  // Production environment (cloud) - Using HTTP temporarily (HTTPS has connectivity issues)
   production: {
-    API_BASE_URL: "https://bpmn-backend.eba-nkwvxj2u.us-east-2.elasticbeanstalk.com",
+    API_BASE_URL: "http://bpmn-backend.eba-nkwvxj2u.us-east-2.elasticbeanstalk.com",
     ENVIRONMENT: "production"
   }
 };
